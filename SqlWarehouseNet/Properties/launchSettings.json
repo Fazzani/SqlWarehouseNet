@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "SqlWarehouseNet": {
+      "commandName": "Project",
+      "commandLineArgs": "\"SELECT 1 as test\"",
+      "environmentVariables": {
+        "DATABRICKS_HOST": "https://<your-host>.azuredatabricks.net/",
+        "DATABRICKS_TOKEN": "<your-token>",
+        "DATABRICKS_WAREHOUSE_ID": "<your-warehouse-id>"
+      }
+    }
+  }
+}
