@@ -5,15 +5,22 @@ using SqlWarehouseNet.Models;
 
 namespace SqlWarehouseNet.Services;
 
-public class ExportService
+public class ExportService : IExportService
 {
     public void ExportToCsv(string path, StatementResultResponse status, List<RecordBatch> batches)
     {
         using var writer = new StreamWriter(path, false, Encoding.UTF8);
-        
+
         if (status.Manifest?.Schema?.Columns != null)
         {
-            writer.WriteLine(string.Join(",", status.Manifest.Schema.Columns.Select(c => $"\"{c.Name.Replace("\"", "\"\"")}\"")));
+            writer.WriteLine(
+                string.Join(
+                    ",",
+                    status.Manifest.Schema.Columns.Select(c =>
+                        $"\"{c.Name.Replace("\"", "\"\"")}\""
+                    )
+                )
+            );
         }
 
         foreach (var batch in batches)
@@ -35,7 +42,8 @@ public class ExportService
     public void ExportToJson(string path, StatementResultResponse status, List<RecordBatch> batches)
     {
         var rows = new List<Dictionary<string, object?>>();
-        var colNames = status.Manifest?.Schema?.Columns?.Select(c => c.Name).ToList() ?? new List<string>();
+        var colNames =
+            status.Manifest?.Schema?.Columns?.Select(c => c.Name).ToList() ?? new List<string>();
 
         foreach (var batch in batches)
         {
@@ -51,7 +59,11 @@ public class ExportService
             }
         }
 
-        var json = JsonSerializer.Serialize(rows, new JsonSerializerOptions { WriteIndented = true });
+        var options = new JsonSerializerOptions(JsonContext.Default.Options)
+        {
+            WriteIndented = true,
+        };
+        var json = JsonSerializer.Serialize(rows, options);
         File.WriteAllText(path, json, Encoding.UTF8);
     }
 }

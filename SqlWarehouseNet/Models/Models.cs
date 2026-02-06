@@ -126,7 +126,7 @@ public class DatabricksApiException : Exception
 {
     public string? ErrorCode { get; }
 
-    public DatabricksApiException(string message, string? errorCode = null) 
+    public DatabricksApiException(string message, string? errorCode = null)
         : base(message)
     {
         ErrorCode = errorCode;

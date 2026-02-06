@@ -10,6 +10,5 @@ namespace SqlWarehouseNet.Models;
 [JsonSerializable(typeof(ErrorResponse))]
 [JsonSerializable(typeof(ProfileConfig))]
 [JsonSerializable(typeof(Dictionary<string, DatabricksProfile>))]
-internal partial class JsonContext : JsonSerializerContext
-{
-}
+[JsonSerializable(typeof(List<Dictionary<string, object?>>))]
+internal partial class JsonContext : JsonSerializerContext { }
