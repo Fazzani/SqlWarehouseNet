@@ -1,9 +1,10 @@
 using System.Text.Json;
+using Spectre.Console;
 using SqlWarehouseNet.Models;
 
 namespace SqlWarehouseNet.Services;
 
-public class ProfileService
+public class ProfileService : IProfileService
 {
     public string UserProfileDir { get; }
     public string HistoryFile { get; }
@@ -11,10 +12,14 @@ public class ProfileService
     public string TablesCacheFile { get; }
     public string SchemasCacheFile { get; }
     private const int MaxCacheSize = 1000;
+    private const int MaxHistorySize = 500;
 
     public ProfileService()
     {
-        UserProfileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".sqlwarehouse");
+        UserProfileDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".sqlwarehouse"
+        );
         if (!Directory.Exists(UserProfileDir))
         {
             Directory.CreateDirectory(UserProfileDir);
@@ -28,52 +33,101 @@ public class ProfileService
 
     public DatabricksProfile? LoadDefaultProfile()
     {
-        if (!File.Exists(ProfilesFile)) return null;
+        if (!File.Exists(ProfilesFile))
+            return null;
         try
         {
             var json = File.ReadAllText(ProfilesFile);
             var config = JsonSerializer.Deserialize(json, JsonContext.Default.ProfileConfig);
-            if (config == null || string.IsNullOrEmpty(config.DefaultProfile)) return null;
-            
+            if (config == null || string.IsNullOrEmpty(config.DefaultProfile))
+                return null;
+
             config.Profiles.TryGetValue(config.DefaultProfile, out var profile);
-            if (profile != null) profile.Name = config.DefaultProfile;
+            if (profile != null)
+                profile.Name = config.DefaultProfile;
             return profile;
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not load default profile: {ex.Message.EscapeMarkup()}"
+            );
+            return null;
+        }
     }
 
     public ProfileConfig LoadConfig()
     {
-        if (!File.Exists(ProfilesFile)) return new ProfileConfig();
+        if (!File.Exists(ProfilesFile))
+            return new ProfileConfig();
         try
         {
-            return JsonSerializer.Deserialize(File.ReadAllText(ProfilesFile), JsonContext.Default.ProfileConfig) ?? new ProfileConfig();
+            return JsonSerializer.Deserialize(
+                    File.ReadAllText(ProfilesFile),
+                    JsonContext.Default.ProfileConfig
+                ) ?? new ProfileConfig();
         }
-        catch { return new ProfileConfig(); }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not load config: {ex.Message.EscapeMarkup()}"
+            );
+            return new ProfileConfig();
+        }
     }
 
     public void SaveConfig(ProfileConfig config)
     {
-        File.WriteAllText(ProfilesFile, JsonSerializer.Serialize(config, JsonContext.Default.ProfileConfig));
+        try
+        {
+            File.WriteAllText(
+                ProfilesFile,
+                JsonSerializer.Serialize(config, JsonContext.Default.ProfileConfig)
+            );
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not save config: {ex.Message.EscapeMarkup()}"
+            );
+        }
     }
 
     public List<string> LoadHistory()
     {
-        if (!File.Exists(HistoryFile)) return new List<string>();
+        if (!File.Exists(HistoryFile))
+            return new List<string>();
         try
         {
-            var lines = File.ReadAllLines(HistoryFile).ToList();
+            var lines = File.ReadAllLines(HistoryFile);
             var deduplicated = new List<string>();
             foreach (var line in lines)
             {
-                if (deduplicated.Count == 0 || !deduplicated[^1].Equals(line, StringComparison.Ordinal))
+                if (
+                    deduplicated.Count == 0
+                    || !deduplicated[^1].Equals(line, StringComparison.Ordinal)
+                )
                 {
                     deduplicated.Add(line);
                 }
             }
+
+            // Trim history to the most recent entries
+            if (deduplicated.Count > MaxHistorySize)
+            {
+                deduplicated = deduplicated.Skip(deduplicated.Count - MaxHistorySize).ToList();
+                TruncateHistoryFile(deduplicated);
+            }
+
             return deduplicated;
         }
-        catch { return new List<string>(); }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not load history: {ex.Message.EscapeMarkup()}"
+            );
+            return new List<string>();
+        }
     }
 
     public void SaveHistoryEntry(string query)
@@ -83,31 +137,51 @@ public class ProfileService
             if (File.Exists(HistoryFile))
             {
                 var lastLine = File.ReadLines(HistoryFile).LastOrDefault();
-                if (lastLine?.Equals(query, StringComparison.Ordinal) == true) return;
+                if (lastLine?.Equals(query, StringComparison.Ordinal) == true)
+                    return;
             }
-            File.AppendAllLines(HistoryFile, new[] { query });
+            File.AppendAllLines(HistoryFile, [query]);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not save history entry: {ex.Message.EscapeMarkup()}"
+            );
+        }
     }
 
     public HashSet<string> LoadTablesCache()
     {
         try
         {
-            if (!File.Exists(TablesCacheFile)) return new HashSet<string>();
+            if (!File.Exists(TablesCacheFile))
+                return new HashSet<string>();
             return new HashSet<string>(File.ReadAllLines(TablesCacheFile));
         }
-        catch { return new HashSet<string>(); }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not load tables cache: {ex.Message.EscapeMarkup()}"
+            );
+            return new HashSet<string>();
+        }
     }
 
     public HashSet<string> LoadSchemasCache()
     {
         try
         {
-            if (!File.Exists(SchemasCacheFile)) return new HashSet<string>();
+            if (!File.Exists(SchemasCacheFile))
+                return new HashSet<string>();
             return new HashSet<string>(File.ReadAllLines(SchemasCacheFile));
         }
-        catch { return new HashSet<string>(); }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not load schemas cache: {ex.Message.EscapeMarkup()}"
+            );
+            return new HashSet<string>();
+        }
     }
 
     public void SaveTablesCache(HashSet<string> cache)
@@ -117,7 +191,12 @@ public class ProfileService
             var data = cache.Count > MaxCacheSize ? cache.Take(MaxCacheSize) : cache;
             File.WriteAllLines(TablesCacheFile, data);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not save tables cache: {ex.Message.EscapeMarkup()}"
+            );
+        }
     }
 
     public void SaveSchemasCache(HashSet<string> cache)
@@ -127,6 +206,22 @@ public class ProfileService
             var data = cache.Count > MaxCacheSize ? cache.Take(MaxCacheSize) : cache;
             File.WriteAllLines(SchemasCacheFile, data);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Warning:[/] Could not save schemas cache: {ex.Message.EscapeMarkup()}"
+            );
+        }
+    }
+
+    private void TruncateHistoryFile(List<string> trimmedHistory)
+    {
+        try
+        {
+            File.WriteAllLines(HistoryFile, trimmedHistory);
+        }
+        catch
+        { /* Best-effort truncation */
+        }
     }
 }

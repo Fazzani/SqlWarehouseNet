@@ -6,10 +6,23 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dbsql</ToolCommandName>
     <PackageId>up.DbSql</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet metadata -->
+    <Authors>Fazzani</Authors>
+    <Description>High-performance interactive CLI for Azure Databricks SQL Warehouses. Supports Apache Arrow streaming, parallel downloads, multi-line queries, and profile management.</Description>
+    <PackageTags>databricks;sql;warehouse;cli;arrow</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/fazzani/SqlWarehouse-net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Apache.Arrow" Version="22.1.0" />
