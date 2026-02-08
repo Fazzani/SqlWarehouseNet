@@ -1,0 +1,45 @@
+{
+  // === VS Code 1.109 — AI & Agent Settings ===
+
+  // Enable Agent Skills (GA in 1.109) — loads .github/skills/
+  "chat.useAgentSkills": true,
+
+  // Enable custom agents as subagents (orchestration)
+  "chat.customAgentInSubagent.enabled": true,
+
+  // Enable search subagent for better codebase exploration
+  "github.copilot.chat.searchSubagent.enabled": true,
+
+  // Enable Ask Questions tool — agent asks clarifying questions instead of guessing
+  "chat.askQuestions.enabled": true,
+
+  // Enable Agent Customization Skill — teaches the agent about .agent.md, .prompt.md, etc.
+  "chat.agentCustomizationSkill.enabled": true,
+
+  // Enable Copilot Memory — persist context across sessions
+  "github.copilot.chat.copilotMemory.enabled": true,
+
+  // Thinking tokens — detailed reasoning for Anthropic models
+  "chat.thinking.style": "detailed",
+
+  // External indexing for semantic code search (non-GitHub repos)
+  "github.copilot.chat.advanced.workspace.codeSearchExternalIngest.enabled": true,
+
+  // === Agent Status & Session Management ===
+
+  // Show agent status indicator in command center
+  "chat.agentsControl.enabled": true,
+
+  // === Terminal Improvements ===
+
+  // Auto-approve safe terminal commands (dotnet build, etc.)
+  "chat.tools.terminal.enableAutoApprove": true,
+
+  // === Editor Settings ===
+
+  // C# specific settings for this project
+  "[csharp]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-dotnettools.csharp"
+  }
+}
